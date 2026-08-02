@@ -10,6 +10,10 @@ import '../features/dashboard/presentation/home_dashboard_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/onboarding/presentation/splash_page.dart';
 import '../features/study_plan/presentation/select_study_plan_page.dart';
+import '../features/subject/presentation/subject_detail_page.dart';
+import '../features/subject/presentation/subject_list_page.dart';
+import '../features/topic/presentation/add_topic_page.dart';
+import '../features/topic/presentation/topics_list_page.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -21,6 +25,11 @@ class AppRoutes {
   static const forgotPassword = '/forgot-password';
   static const selectPlan = '/select-plan';
   static const home = '/home';
+  static const subjects = '/subjects';
+
+  static String subjectDetail(String subjectId) => '/subjects/$subjectId';
+  static String topicsList(String subjectId) => '/subjects/$subjectId/topics';
+  static String addTopic(String subjectId) => '/subjects/$subjectId/topics/add';
 }
 
 const _authRoutes = {
@@ -102,6 +111,34 @@ GoRouter buildRouter(AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomeDashboardPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.subjects,
+        builder: (context, state) => const SubjectListPage(),
+        routes: [
+          GoRoute(
+            path: ':subjectId',
+            builder: (context, state) => SubjectDetailPage(
+              subjectId: state.pathParameters['subjectId']!,
+            ),
+            routes: [
+              GoRoute(
+                path: 'topics',
+                builder: (context, state) => TopicsListPage(
+                  subjectId: state.pathParameters['subjectId']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'add',
+                    builder: (context, state) => AddTopicPage(
+                      subjectId: state.pathParameters['subjectId']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

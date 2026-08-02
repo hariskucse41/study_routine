@@ -10,6 +10,10 @@ import '../../features/dashboard/bloc/dashboard_bloc.dart';
 import '../../features/dashboard/repository/dashboard_repository.dart';
 import '../../features/study_plan/bloc/study_plan_bloc.dart';
 import '../../features/study_plan/repository/study_plan_repository.dart';
+import '../../features/subject/bloc/subject_bloc.dart';
+import '../../features/subject/repository/subject_repository.dart';
+import '../../features/topic/bloc/topic_bloc.dart';
+import '../../features/topic/repository/topic_repository.dart';
 
 final getIt = GetIt.instance;
 
@@ -44,6 +48,20 @@ void setupInjector() {
   );
   getIt.registerFactory<DashboardBloc>(
     () => DashboardBloc(getIt<DashboardRepository>()),
+  );
+
+  getIt.registerLazySingleton<SubjectRepository>(
+    () => SubjectRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  getIt.registerFactory<SubjectBloc>(
+    () => SubjectBloc(getIt<SubjectRepository>()),
+  );
+
+  getIt.registerLazySingleton<TopicRepository>(
+    () => TopicRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  getIt.registerFactory<TopicBloc>(
+    () => TopicBloc(getIt<TopicRepository>()),
   );
 
   getIt.registerLazySingleton<GoRouter>(() => buildRouter(getIt<AuthBloc>()));

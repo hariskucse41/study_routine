@@ -11,3 +11,4 @@ Future<void> main() async {
   setupInjector();
   runApp(const StudyRoutineApp());
 }
+

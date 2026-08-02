@@ -4,14 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
 import '../../../core/di/injector.dart';
+import '../../../core/navigation/nav_actions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_bottom_nav_bar.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/error_state_widget.dart';
 import '../../../core/widgets/loading_indicator.dart';
-import '../../auth/bloc/auth_bloc.dart';
-import '../../auth/bloc/auth_event.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -35,50 +34,6 @@ class HomeDashboardPage extends StatelessWidget {
 
 class _HomeDashboardView extends StatelessWidget {
   const _HomeDashboardView();
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Coming in a later phase')),
-    );
-  }
-
-  void _showMoreMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _showComingSoon(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: AppColors.error),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                context.read<AuthBloc>().add(const LogoutRequested());
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onNavTap(BuildContext context, AppNavTab tab) {
-    if (tab == AppNavTab.home) return;
-    if (tab == AppNavTab.more) {
-      _showMoreMenu(context);
-      return;
-    }
-    _showComingSoon(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +74,7 @@ class _HomeDashboardView extends StatelessWidget {
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
                       GreetingHeader(
-                        onNotificationsTap: () => _showComingSoon(context),
+                        onNotificationsTap: () => showComingSoon(context),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       ActivePlanCard(plan: summary.plan),
@@ -136,7 +91,7 @@ class _HomeDashboardView extends StatelessWidget {
       ),
       bottomNavigationBar: AppBottomNavBar(
         current: AppNavTab.home,
-        onTap: (tab) => _onNavTap(context, tab),
+        onTap: (tab) => handleBottomNavTap(context, tab, AppNavTab.home),
       ),
     );
   }
