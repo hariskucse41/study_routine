@@ -20,6 +20,8 @@ import '../../features/study_session/bloc/study_session_bloc.dart';
 import '../../features/study_session/repository/study_session_repository.dart';
 import '../../features/subject/bloc/subject_bloc.dart';
 import '../../features/subject/repository/subject_repository.dart';
+import '../../features/test_result/bloc/test_result_bloc.dart';
+import '../../features/test_result/repository/test_result_repository.dart';
 import '../../features/topic/bloc/topic_bloc.dart';
 import '../../features/topic/repository/topic_repository.dart';
 
@@ -110,6 +112,13 @@ void setupInjector() {
     ),
   );
 
+  getIt.registerLazySingleton<TestResultRepository>(
+    () => TestResultRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  getIt.registerFactory<TestResultBloc>(
+    () => TestResultBloc(getIt<TestResultRepository>()),
+  );
+
   // ProgressAnalyticsBloc has no dedicated repository either — same
   // rationale as GoalsBloc.
   getIt.registerFactory<ProgressAnalyticsBloc>(
@@ -118,6 +127,7 @@ void setupInjector() {
       getIt<SubjectRepository>(),
       getIt<TopicRepository>(),
       getIt<StudySessionRepository>(),
+      getIt<TestResultRepository>(),
     ),
   );
 

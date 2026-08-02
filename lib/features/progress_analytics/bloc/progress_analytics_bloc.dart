@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/study_constants.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../study_plan/repository/study_plan_repository.dart';
 import '../../study_session/repository/study_session_repository.dart';
 import '../../subject/repository/subject_repository.dart';
+import '../../test_result/repository/test_result_repository.dart';
 import '../../topic/model/topic_aggregates.dart';
 import '../../topic/model/topic_model.dart';
 import '../../topic/repository/topic_repository.dart';
@@ -14,19 +16,22 @@ import 'progress_analytics_state.dart';
 
 /// No dedicated repository — reads directly from the existing
 /// StudyPlanRepository/SubjectRepository/TopicRepository/
-/// StudySessionRepository, same approach as GoalsBloc in Phase 8.
+/// StudySessionRepository/TestResultRepository, same approach as GoalsBloc
+/// in Phase 8.
 class ProgressAnalyticsBloc
     extends Bloc<ProgressAnalyticsEvent, ProgressAnalyticsState> {
   final StudyPlanRepository _studyPlanRepo;
   final SubjectRepository _subjectRepo;
   final TopicRepository _topicRepo;
   final StudySessionRepository _studySessionRepo;
+  final TestResultRepository _testResultRepo;
 
   ProgressAnalyticsBloc(
     this._studyPlanRepo,
     this._subjectRepo,
     this._topicRepo,
     this._studySessionRepo,
+    this._testResultRepo,
   ) : super(const ProgressAnalyticsState()) {
     on<LoadOverallProgressRequested>(_onLoadOverall);
     on<LoadSubjectAnalyticsRequested>(_onLoadSubjectAnalytics);
@@ -146,9 +151,24 @@ class ProgressAnalyticsBloc
       final subjects = await _subjectRepo.fetchSubjects(plan.id);
       final allTopics = await _topicRepo.fetchTopicsForPlan(plan.id);
 
+      final windowStart = localMidnight(
+        DateTime.now().subtract(
+          const Duration(days: recentTestResultsWindowDays),
+        ),
+      );
+      final avgScoreBySubject = await _testResultRepo.fetchAverageScoreBySubject(
+        planId: plan.id,
+        since: windowStart,
+      );
+      final lowScoringSubjectIds = avgScoreBySubject.entries
+          .where((e) => e.value < weakSubjectScoreThreshold)
+          .map((e) => e.key)
+          .toSet();
+
       bool isWeak(TopicModel t) =>
           t.confidenceScore < 3.0 ||
-          (t.status == 'inProgress' && t.progressPercentage < 50);
+          (t.status == 'inProgress' && t.progressPercentage < 50) ||
+          lowScoringSubjectIds.contains(t.subjectId);
 
       final weakTopics = allTopics.where(isWeak).toList()
         ..sort((a, b) => a.confidenceScore.compareTo(b.confidenceScore));

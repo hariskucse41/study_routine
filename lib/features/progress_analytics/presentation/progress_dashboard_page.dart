@@ -148,9 +148,17 @@ class _ProgressContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Subject Progress', style: AppTextStyles.heading3),
-            TextButton(
-              onPressed: () => context.push(AppRoutes.weakTopics),
-              child: const Text('Weak Topics'),
+            Wrap(
+              children: [
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.weakTopics),
+                  child: const Text('Weak Topics'),
+                ),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.testResults),
+                  child: const Text('Test Results'),
+                ),
+              ],
             ),
           ],
         ),

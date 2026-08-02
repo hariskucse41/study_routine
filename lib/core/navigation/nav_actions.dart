@@ -54,6 +54,14 @@ void showMoreMenu(BuildContext context) {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.quiz_outlined),
+            title: const Text('Test Results'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              context.push(AppRoutes.testResults);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.settings_outlined),
             title: const Text('Settings'),
             onTap: () {

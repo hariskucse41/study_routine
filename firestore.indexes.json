@@ -120,6 +120,15 @@
         { "fieldPath": "subjectId", "order": "ASCENDING" },
         { "fieldPath": "testDate", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "test_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "planId", "order": "ASCENDING" },
+        { "fieldPath": "testDate", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

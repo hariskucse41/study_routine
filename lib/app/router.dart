@@ -26,6 +26,8 @@ import '../features/study_session/presentation/session_timer_page.dart';
 import '../features/study_session/presentation/update_progress_page.dart';
 import '../features/subject/presentation/subject_detail_page.dart';
 import '../features/subject/presentation/subject_list_page.dart';
+import '../features/test_result/presentation/add_test_result_page.dart';
+import '../features/test_result/presentation/test_results_page.dart';
 import '../features/topic/presentation/add_topic_page.dart';
 import '../features/topic/presentation/topics_list_page.dart';
 
@@ -62,6 +64,9 @@ class AppRoutes {
   static String subjectAnalytics(String subjectId) =>
       '/progress/subjects/$subjectId';
   static const weakTopics = '/progress/weak-topics';
+
+  static const testResults = '/test-results';
+  static const addTestResult = '/test-results/add';
 }
 
 const _authRoutes = {
@@ -232,6 +237,16 @@ GoRouter buildRouter(AuthBloc authBloc) {
           GoRoute(
             path: 'weak-topics',
             builder: (context, state) => const WeakTopicsPage(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.testResults,
+        builder: (context, state) => const TestResultsPage(),
+        routes: [
+          GoRoute(
+            path: 'add',
+            builder: (context, state) => const AddTestResultPage(),
           ),
         ],
       ),

@@ -11,3 +11,13 @@ const int defaultRevisionIntervalDays = 3;
 const int defaultDailyTopicsTarget = 3;
 const int defaultDailyRevisionsTarget = 3;
 const int defaultDailyMcqsTarget = 20;
+
+/// A subject whose average recent test score falls below this feeds all of
+/// its topics into the Weak Topics screen (screen 24), alongside the
+/// existing per-topic confidence/stalled-progress criteria.
+const double weakSubjectScoreThreshold = 60.0;
+
+/// "Recent" test results window used both for the weak-subject signal
+/// above and generally treated as the meaningful recency horizon for test
+/// performance.
+const int recentTestResultsWindowDays = 30;
