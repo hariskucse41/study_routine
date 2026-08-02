@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/error_state_widget.dart';
 import '../../../core/widgets/loading_indicator.dart';
+import '../../study_session/presentation/session_start_args.dart';
 import '../bloc/topic_bloc.dart';
 import '../bloc/topic_event.dart';
 import '../bloc/topic_state.dart';
@@ -17,23 +18,29 @@ import 'widgets/topic_tile.dart';
 
 class TopicsListPage extends StatelessWidget {
   final String subjectId;
+  final String subjectName;
 
-  const TopicsListPage({super.key, required this.subjectId});
+  const TopicsListPage({
+    super.key,
+    required this.subjectId,
+    required this.subjectName,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TopicBloc>(
       create: (_) =>
           getIt<TopicBloc>()..add(WatchTopicsRequested(subjectId)),
-      child: _TopicsListView(subjectId: subjectId),
+      child: _TopicsListView(subjectId: subjectId, subjectName: subjectName),
     );
   }
 }
 
 class _TopicsListView extends StatefulWidget {
   final String subjectId;
+  final String subjectName;
 
-  const _TopicsListView({required this.subjectId});
+  const _TopicsListView({required this.subjectId, required this.subjectName});
 
   @override
   State<_TopicsListView> createState() => _TopicsListViewState();
@@ -49,9 +56,19 @@ class _TopicsListViewState extends State<_TopicsListView> {
     super.dispose();
   }
 
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Coming in a later phase')),
+  void _startSession(TopicModel topic) {
+    context.push(
+      AppRoutes.session,
+      extra: SessionStartArgs(
+        planId: topic.planId,
+        subjectId: widget.subjectId,
+        topicId: topic.id,
+        subjectName: widget.subjectName,
+        topicName: topic.title,
+        plannedMinutes: topic.estimatedMinutes > 0
+            ? topic.estimatedMinutes
+            : 25,
+      ),
     );
   }
 
@@ -61,14 +78,22 @@ class _TopicsListViewState extends State<_TopicsListView> {
     final widgets = <Widget>[];
     for (final chapter in chapters) {
       widgets.add(
-        TopicTile(topic: chapter, indented: false, onTap: _showComingSoon),
+        TopicTile(
+          topic: chapter,
+          indented: false,
+          onTap: () => _startSession(chapter),
+        ),
       );
       final children = topics.where((t) => t.parentTopicId == chapter.id).toList()
         ..sort((a, b) => a.order.compareTo(b.order));
       for (final child in children) {
         widgets.add(const SizedBox(height: AppSpacing.sm));
         widgets.add(
-          TopicTile(topic: child, indented: true, onTap: _showComingSoon),
+          TopicTile(
+            topic: child,
+            indented: true,
+            onTap: () => _startSession(child),
+          ),
         );
       }
       widgets.add(const SizedBox(height: AppSpacing.md));
@@ -87,7 +112,7 @@ class _TopicsListViewState extends State<_TopicsListView> {
         TopicTile(
           topic: topic,
           indented: !topic.isChapter,
-          onTap: _showComingSoon,
+          onTap: () => _startSession(topic),
         ),
         const SizedBox(height: AppSpacing.sm),
       ],

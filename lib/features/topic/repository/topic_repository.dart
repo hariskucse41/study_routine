@@ -58,4 +58,36 @@ class TopicRepository {
     );
     await docRef.set(topic.toFirestore());
   }
+
+  /// Updates both the topic doc and its originating study_sessions doc in
+  /// one atomic batch — the session captures what happened in that sitting
+  /// (completionPercentage/confidenceScore/notes), while the topic's own
+  /// fields reflect its overall current standing.
+  Future<void> updateTopicProgress({
+    required String topicId,
+    required String sessionId,
+    required int progressPercentage,
+    required String status,
+    required double confidenceScore,
+    String? notes,
+  }) async {
+    final batch = _firestore.batch();
+
+    batch.update(_col.doc(topicId), {
+      'progressPercentage': progressPercentage,
+      'status': status,
+      'confidenceScore': confidenceScore,
+      'revisionRequired': status == 'revisionNeeded',
+      'updatedAt': FieldValue.serverTimestamp(),
+      if (status == 'completed') 'completedAt': FieldValue.serverTimestamp(),
+    });
+
+    batch.update(_firestore.collection('study_sessions').doc(sessionId), {
+      'completionPercentage': progressPercentage,
+      'confidenceScore': confidenceScore,
+      if (notes != null) 'notes': notes,
+    });
+
+    await batch.commit();
+  }
 }

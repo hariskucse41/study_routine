@@ -16,6 +16,7 @@ class TopicBloc extends Bloc<TopicEvent, TopicState> {
     on<TopicsStreamUpdated>(_onStreamUpdated);
     on<TopicStreamFailed>(_onStreamFailed);
     on<AddTopicRequested>(_onAddRequested);
+    on<UpdateTopicProgressRequested>(_onUpdateProgressRequested);
   }
 
   Future<void> _onWatchRequested(
@@ -71,6 +72,44 @@ class TopicBloc extends Bloc<TopicEvent, TopicState> {
         difficulty: event.difficulty,
         estimatedMinutes: event.estimatedMinutes,
         order: siblingCount,
+      );
+      emit(
+        state.copyWith(
+          submissionStatus: TopicSubmissionStatus.success,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          submissionStatus: TopicSubmissionStatus.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  /// Failure here doesn't flip [TopicState.status] either — same reasoning
+  /// as [_onAddRequested]: this is a transient action against whichever
+  /// list/detail is already on screen, not a reason to blow it away.
+  Future<void> _onUpdateProgressRequested(
+    UpdateTopicProgressRequested event,
+    Emitter<TopicState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        submissionStatus: TopicSubmissionStatus.submitting,
+        clearError: true,
+      ),
+    );
+    try {
+      await _repo.updateTopicProgress(
+        topicId: event.topicId,
+        sessionId: event.sessionId,
+        progressPercentage: event.progressPercentage,
+        status: event.status,
+        confidenceScore: event.confidenceScore,
+        notes: event.notes,
       );
       emit(
         state.copyWith(

@@ -1,25 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-/// Local-midnight boundaries for "today", in the device's local timezone.
-/// See §10 of the implementation guide: a full per-user IANA timezone
-/// (users/{uid}.timezone) would need the `timezone` package on top of this;
-/// this pragmatic version uses the device's own local time, which is
-/// correct as long as the device and the user are in the same zone.
-class TodayRange {
+/// A local-midnight-anchored [start, end) window, in the device's local
+/// timezone. See §10 of the implementation guide: a full per-user IANA
+/// timezone (users/{uid}.timezone) would need the `timezone` package on
+/// top of this; this pragmatic version uses the device's own local time,
+/// which is correct as long as the device and the user are in the same
+/// zone.
+class DateRange {
   final DateTime start;
   final DateTime end;
-  const TodayRange(this.start, this.end);
+  const DateRange(this.start, this.end);
 
   Timestamp get startTimestamp => Timestamp.fromDate(start);
   Timestamp get endTimestamp => Timestamp.fromDate(end);
 }
 
-TodayRange todayRange() {
-  final now = DateTime.now();
-  final start = DateTime(now.year, now.month, now.day);
+DateRange todayRange() => rangeForDate(DateTime.now());
+
+DateRange rangeForDate(DateTime date) {
+  final start = DateTime(date.year, date.month, date.day);
   final end = start.add(const Duration(days: 1));
-  return TodayRange(start, end);
+  return DateRange(start, end);
+}
+
+DateRange rangeForMonth(DateTime anchor) {
+  final start = DateTime(anchor.year, anchor.month, 1);
+  final end = DateTime(anchor.year, anchor.month + 1, 1);
+  return DateRange(start, end);
 }
 
 DateTime localMidnight(DateTime date) =>

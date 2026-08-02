@@ -4,14 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../study_plan/model/study_plan_model.dart';
 import '../../study_plan/repository/study_plan_repository.dart';
+import '../../study_session/repository/study_session_repository.dart';
 import '../model/dashboard_summary.dart';
 
 class DashboardRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
   final StudyPlanRepository _studyPlanRepo;
+  final StudySessionRepository _studySessionRepo;
 
-  DashboardRepository(this._firestore, this._auth, this._studyPlanRepo);
+  DashboardRepository(
+    this._firestore,
+    this._auth,
+    this._studyPlanRepo,
+    this._studySessionRepo,
+  );
 
   String get _uid => _auth.currentUser!.uid;
 
@@ -35,21 +42,11 @@ class DashboardRepository {
         .where((d) => d.data()['status'] == 'completed')
         .length;
 
-    // study_sessions only has a documented composite index on
-    // (userId, startedAt) — not (userId, planId, startedAt) — so planId is
-    // filtered client-side over the (small) per-day/window result set.
-    final sessionsToday = await _firestore
-        .collection('study_sessions')
-        .where('userId', isEqualTo: _uid)
-        .where('startedAt', isGreaterThanOrEqualTo: today.startTimestamp)
-        .where('startedAt', isLessThan: today.endTimestamp)
-        .get();
-    final studyMinutesToday = sessionsToday.docs
-        .where((d) => d.data()['planId'] == plan.id)
-        .fold<int>(
-          0,
-          (total, d) => total + ((d.data()['actualMinutes'] ?? 0) as int),
-        );
+    final studyMinutesToday = await _studySessionRepo.fetchTotalMinutesForRange(
+      planId: plan.id,
+      start: today.start,
+      end: today.end,
+    );
 
     final dueRevisions = await _firestore
         .collection('revisions')
@@ -80,25 +77,10 @@ class DashboardRepository {
       DateTime.now().subtract(const Duration(days: windowDays)),
     );
 
-    final recentSessions = await _firestore
-        .collection('study_sessions')
-        .where('userId', isEqualTo: _uid)
-        .where(
-          'startedAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(windowStart),
-        )
-        .get();
-
-    final minutesByDay = <DateTime, int>{};
-    for (final doc in recentSessions.docs) {
-      final data = doc.data();
-      if (data['planId'] != plan.id) continue;
-      final startedAt = (data['startedAt'] as Timestamp?)?.toDate();
-      if (startedAt == null) continue;
-      final day = localMidnight(startedAt);
-      final minutes = (data['actualMinutes'] ?? 0) as int;
-      minutesByDay[day] = (minutesByDay[day] ?? 0) + minutes;
-    }
+    final minutesByDay = await _studySessionRepo.fetchMinutesByDay(
+      planId: plan.id,
+      windowStart: windowStart,
+    );
 
     final today = localMidnight(DateTime.now());
     bool metTarget(DateTime day) =>

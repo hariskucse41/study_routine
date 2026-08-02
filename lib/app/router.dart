@@ -9,7 +9,14 @@ import '../features/auth/presentation/register_page.dart';
 import '../features/dashboard/presentation/home_dashboard_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/onboarding/presentation/splash_page.dart';
+import '../features/schedule/presentation/add_schedule_page.dart';
+import '../features/schedule/presentation/calendar_view_page.dart';
+import '../features/schedule/presentation/todays_routine_page.dart';
 import '../features/study_plan/presentation/select_study_plan_page.dart';
+import '../features/study_session/presentation/session_complete_page.dart';
+import '../features/study_session/presentation/session_start_args.dart';
+import '../features/study_session/presentation/session_timer_page.dart';
+import '../features/study_session/presentation/update_progress_page.dart';
 import '../features/subject/presentation/subject_detail_page.dart';
 import '../features/subject/presentation/subject_list_page.dart';
 import '../features/topic/presentation/add_topic_page.dart';
@@ -30,6 +37,14 @@ class AppRoutes {
   static String subjectDetail(String subjectId) => '/subjects/$subjectId';
   static String topicsList(String subjectId) => '/subjects/$subjectId/topics';
   static String addTopic(String subjectId) => '/subjects/$subjectId/topics/add';
+
+  static const schedule = '/schedule';
+  static const addSchedule = '/schedule/add';
+  static const calendar = '/schedule/calendar';
+
+  static const session = '/session';
+  static const sessionComplete = '/session/complete';
+  static const updateProgress = '/session/update-progress';
 }
 
 const _authRoutes = {
@@ -126,6 +141,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
                 path: 'topics',
                 builder: (context, state) => TopicsListPage(
                   subjectId: state.pathParameters['subjectId']!,
+                  subjectName: state.extra as String? ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -137,6 +153,35 @@ GoRouter buildRouter(AuthBloc authBloc) {
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.schedule,
+        builder: (context, state) => const TodaysRoutinePage(),
+        routes: [
+          GoRoute(
+            path: 'add',
+            builder: (context, state) => const AddSchedulePage(),
+          ),
+          GoRoute(
+            path: 'calendar',
+            builder: (context, state) => const CalendarViewPage(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.session,
+        builder: (context, state) =>
+            SessionTimerPage(args: state.extra as SessionStartArgs),
+        routes: [
+          GoRoute(
+            path: 'complete',
+            builder: (context, state) => const SessionCompletePage(),
+          ),
+          GoRoute(
+            path: 'update-progress',
+            builder: (context, state) => const UpdateProgressPage(),
           ),
         ],
       ),

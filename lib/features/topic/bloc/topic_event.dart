@@ -55,3 +55,31 @@ class AddTopicRequested extends TopicEvent {
     estimatedMinutes,
   ];
 }
+
+class UpdateTopicProgressRequested extends TopicEvent {
+  final String topicId;
+  final String sessionId;
+  final int progressPercentage;
+  final String status;
+  final double confidenceScore;
+  final String? notes;
+
+  const UpdateTopicProgressRequested({
+    required this.topicId,
+    required this.sessionId,
+    required this.progressPercentage,
+    required this.status,
+    required this.confidenceScore,
+    this.notes,
+  });
+
+  @override
+  List<Object?> get props => [
+    topicId,
+    sessionId,
+    progressPercentage,
+    status,
+    confidenceScore,
+    notes,
+  ];
+}

@@ -79,7 +79,10 @@ class _HomeDashboardView extends StatelessWidget {
                       const SizedBox(height: AppSpacing.lg),
                       ActivePlanCard(plan: summary.plan),
                       const SizedBox(height: AppSpacing.lg),
-                      TodayOverviewCard(summary: summary),
+                      TodayOverviewCard(
+                        summary: summary,
+                        onTap: () => context.push(AppRoutes.schedule),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
                       RevisionStreakRow(summary: summary),
                     ],

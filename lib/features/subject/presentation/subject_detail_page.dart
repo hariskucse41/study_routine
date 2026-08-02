@@ -16,6 +16,7 @@ import '../../topic/bloc/topic_event.dart';
 import '../../topic/bloc/topic_state.dart';
 import '../../topic/model/topic_model.dart';
 import '../../topic/presentation/widgets/topic_tile.dart';
+import '../../study_session/presentation/session_start_args.dart';
 import '../bloc/subject_bloc.dart';
 import '../bloc/subject_event.dart';
 import '../bloc/subject_state.dart';
@@ -198,6 +199,22 @@ class _SubjectDetailContent extends StatelessWidget {
     required this.onArchive,
   });
 
+  void _startSession(BuildContext context, TopicModel topic) {
+    context.push(
+      AppRoutes.session,
+      extra: SessionStartArgs(
+        planId: topic.planId,
+        subjectId: subject.id,
+        topicId: topic.id,
+        subjectName: subject.name,
+        topicName: topic.title,
+        plannedMinutes: topic.estimatedMinutes > 0
+            ? topic.estimatedMinutes
+            : 25,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = subjectColorFor(subject.color);
@@ -309,8 +326,10 @@ class _SubjectDetailContent extends StatelessWidget {
               const Text('Chapters', style: AppTextStyles.heading3),
               if (aggregates.chapters.isNotEmpty)
                 TextButton(
-                  onPressed: () =>
-                      context.push(AppRoutes.topicsList(subject.id)),
+                  onPressed: () => context.push(
+                    AppRoutes.topicsList(subject.id),
+                    extra: subject.name,
+                  ),
                   child: const Text('View All'),
                 ),
             ],
@@ -331,7 +350,7 @@ class _SubjectDetailContent extends StatelessWidget {
               TopicTile(
                 topic: chapter,
                 indented: false,
-                onTap: () => context.push(AppRoutes.topicsList(subject.id)),
+                onTap: () => _startSession(context, chapter),
               ),
               const SizedBox(height: AppSpacing.sm),
             ],

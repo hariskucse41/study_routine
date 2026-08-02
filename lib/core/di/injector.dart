@@ -8,8 +8,12 @@ import '../../features/auth/bloc/auth_bloc.dart';
 import '../../features/auth/repository/auth_repository.dart';
 import '../../features/dashboard/bloc/dashboard_bloc.dart';
 import '../../features/dashboard/repository/dashboard_repository.dart';
+import '../../features/schedule/bloc/schedule_bloc.dart';
+import '../../features/schedule/repository/schedule_repository.dart';
 import '../../features/study_plan/bloc/study_plan_bloc.dart';
 import '../../features/study_plan/repository/study_plan_repository.dart';
+import '../../features/study_session/bloc/study_session_bloc.dart';
+import '../../features/study_session/repository/study_session_repository.dart';
 import '../../features/subject/bloc/subject_bloc.dart';
 import '../../features/subject/repository/subject_repository.dart';
 import '../../features/topic/bloc/topic_bloc.dart';
@@ -39,11 +43,24 @@ void setupInjector() {
     () => StudyPlanBloc(getIt<StudyPlanRepository>()),
   );
 
+  getIt.registerLazySingleton<StudySessionRepository>(
+    () => StudySessionRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  // StudySessionBloc is a singleton (not a factory like most feature
+  // Blocs) because Session Timer -> Session Complete -> Update Progress
+  // is one continuous flow across separate route pushes, and Session
+  // Complete specifically needs to read the state Session Timer just
+  // emitted — there's only ever one active session app-wide anyway.
+  getIt.registerLazySingleton<StudySessionBloc>(
+    () => StudySessionBloc(getIt<StudySessionRepository>()),
+  );
+
   getIt.registerLazySingleton<DashboardRepository>(
     () => DashboardRepository(
       getIt<FirebaseFirestore>(),
       getIt<FirebaseAuth>(),
       getIt<StudyPlanRepository>(),
+      getIt<StudySessionRepository>(),
     ),
   );
   getIt.registerFactory<DashboardBloc>(
@@ -62,6 +79,13 @@ void setupInjector() {
   );
   getIt.registerFactory<TopicBloc>(
     () => TopicBloc(getIt<TopicRepository>()),
+  );
+
+  getIt.registerLazySingleton<ScheduleRepository>(
+    () => ScheduleRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  getIt.registerFactory<ScheduleBloc>(
+    () => ScheduleBloc(getIt<ScheduleRepository>()),
   );
 
   getIt.registerLazySingleton<GoRouter>(() => buildRouter(getIt<AuthBloc>()));

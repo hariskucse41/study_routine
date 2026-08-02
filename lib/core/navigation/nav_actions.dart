@@ -26,6 +26,7 @@ void handleBottomNavTap(
     case AppNavTab.more:
       showMoreMenu(context);
     case AppNavTab.add:
+      context.push(AppRoutes.addSchedule);
     case AppNavTab.progress:
       showComingSoon(context);
   }
