@@ -7,8 +7,15 @@ import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
 import '../features/dashboard/presentation/home_dashboard_page.dart';
+import '../features/goals/presentation/goals_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/onboarding/presentation/splash_page.dart';
+import '../features/progress_analytics/presentation/progress_dashboard_page.dart';
+import '../features/progress_analytics/presentation/subject_analytics_page.dart';
+import '../features/progress_analytics/presentation/weak_topics_page.dart';
+import '../features/revision/presentation/revision_detail_args.dart';
+import '../features/revision/presentation/revision_detail_page.dart';
+import '../features/revision/presentation/revision_list_page.dart';
 import '../features/schedule/presentation/add_schedule_page.dart';
 import '../features/schedule/presentation/calendar_view_page.dart';
 import '../features/schedule/presentation/todays_routine_page.dart';
@@ -45,6 +52,16 @@ class AppRoutes {
   static const session = '/session';
   static const sessionComplete = '/session/complete';
   static const updateProgress = '/session/update-progress';
+
+  static const revisions = '/revisions';
+  static String revisionDetail(String topicId) => '/revisions/$topicId';
+
+  static const goals = '/goals';
+
+  static const progress = '/progress';
+  static String subjectAnalytics(String subjectId) =>
+      '/progress/subjects/$subjectId';
+  static const weakTopics = '/progress/weak-topics';
 }
 
 const _authRoutes = {
@@ -182,6 +199,39 @@ GoRouter buildRouter(AuthBloc authBloc) {
           GoRoute(
             path: 'update-progress',
             builder: (context, state) => const UpdateProgressPage(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.revisions,
+        builder: (context, state) => const RevisionListPage(),
+        routes: [
+          GoRoute(
+            path: ':topicId',
+            builder: (context, state) => RevisionDetailPage(
+              topicId: state.pathParameters['topicId']!,
+              args: state.extra as RevisionDetailArgs,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.goals,
+        builder: (context, state) => const GoalsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.progress,
+        builder: (context, state) => const ProgressDashboardPage(),
+        routes: [
+          GoRoute(
+            path: 'subjects/:subjectId',
+            builder: (context, state) => SubjectAnalyticsPage(
+              subjectId: state.pathParameters['subjectId']!,
+            ),
+          ),
+          GoRoute(
+            path: 'weak-topics',
+            builder: (context, state) => const WeakTopicsPage(),
           ),
         ],
       ),

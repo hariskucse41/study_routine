@@ -14,6 +14,7 @@ import '../../../core/widgets/loading_indicator.dart';
 import '../../topic/bloc/topic_bloc.dart';
 import '../../topic/bloc/topic_event.dart';
 import '../../topic/bloc/topic_state.dart';
+import '../../topic/model/topic_aggregates.dart';
 import '../../topic/model/topic_model.dart';
 import '../../topic/presentation/widgets/topic_tile.dart';
 import '../../study_session/presentation/session_start_args.dart';
@@ -130,64 +131,6 @@ class _SubjectDetailView extends StatelessWidget {
   }
 }
 
-class _TopicAggregates {
-  final List<TopicModel> chapters;
-  final int completed;
-  final int inProgress;
-  final int notStarted;
-  final int overallProgressPercent;
-  final int studyMinutes;
-  final double avgConfidence;
-
-  const _TopicAggregates({
-    required this.chapters,
-    required this.completed,
-    required this.inProgress,
-    required this.notStarted,
-    required this.overallProgressPercent,
-    required this.studyMinutes,
-    required this.avgConfidence,
-  });
-
-  factory _TopicAggregates.from(List<TopicModel> topics) {
-    final chapters = topics.where((t) => t.isChapter).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
-
-    if (topics.isEmpty) {
-      return _TopicAggregates(
-        chapters: chapters,
-        completed: 0,
-        inProgress: 0,
-        notStarted: 0,
-        overallProgressPercent: 0,
-        studyMinutes: 0,
-        avgConfidence: 0,
-      );
-    }
-
-    final completed = topics.where((t) => t.status == 'completed').length;
-    final inProgress = topics.where((t) => t.status == 'inProgress').length;
-    final notStarted = topics.where((t) => t.status == 'notStarted').length;
-    final overallProgress =
-        topics.fold<int>(0, (sum, t) => sum + t.progressPercentage) ~/
-        topics.length;
-    final studyMinutes = topics.fold<int>(0, (sum, t) => sum + t.actualMinutes);
-    final avgConfidence =
-        topics.fold<double>(0, (sum, t) => sum + t.confidenceScore) /
-        topics.length;
-
-    return _TopicAggregates(
-      chapters: chapters,
-      completed: completed,
-      inProgress: inProgress,
-      notStarted: notStarted,
-      overallProgressPercent: overallProgress,
-      studyMinutes: studyMinutes,
-      avgConfidence: avgConfidence,
-    );
-  }
-}
-
 class _SubjectDetailContent extends StatelessWidget {
   final SubjectModel subject;
   final List<TopicModel> topics;
@@ -218,7 +161,7 @@ class _SubjectDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = subjectColorFor(subject.color);
-    final aggregates = _TopicAggregates.from(topics);
+    final aggregates = TopicAggregates.from(topics);
 
     return Scaffold(
       appBar: AppBar(

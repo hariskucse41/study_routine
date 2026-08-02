@@ -22,6 +22,17 @@ class SubjectRepository {
         .map((s) => s.docs.map(SubjectModel.fromFirestore).toList());
   }
 
+  /// One-shot equivalent of [watchSubjects], for one-off loads (Progress
+  /// Analytics) that don't need a live subscription.
+  Future<List<SubjectModel>> fetchSubjects(String planId) async {
+    final snapshot = await _col
+        .where('planId', isEqualTo: planId)
+        .where('isArchived', isEqualTo: false)
+        .orderBy('order')
+        .get();
+    return snapshot.docs.map(SubjectModel.fromFirestore).toList();
+  }
+
   Stream<SubjectModel?> watchSubject(String subjectId) {
     return _col
         .doc(subjectId)

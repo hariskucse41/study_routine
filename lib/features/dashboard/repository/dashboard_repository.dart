@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/streak_utils.dart';
 import '../../study_plan/model/study_plan_model.dart';
 import '../../study_plan/repository/study_plan_repository.dart';
 import '../../study_session/repository/study_session_repository.dart';
@@ -82,18 +83,6 @@ class DashboardRepository {
       windowStart: windowStart,
     );
 
-    final today = localMidnight(DateTime.now());
-    bool metTarget(DateTime day) =>
-        (minutesByDay[day] ?? 0) >= plan.dailyTargetMinutes;
-
-    var streak = 0;
-    if (metTarget(today)) streak++;
-
-    var cursor = today.subtract(const Duration(days: 1));
-    while (metTarget(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
+    return computeStreakDays(minutesByDay, plan.dailyTargetMinutes);
   }
 }

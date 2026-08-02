@@ -8,6 +8,10 @@ import '../../features/auth/bloc/auth_bloc.dart';
 import '../../features/auth/repository/auth_repository.dart';
 import '../../features/dashboard/bloc/dashboard_bloc.dart';
 import '../../features/dashboard/repository/dashboard_repository.dart';
+import '../../features/goals/bloc/goals_bloc.dart';
+import '../../features/progress_analytics/bloc/progress_analytics_bloc.dart';
+import '../../features/revision/bloc/revision_bloc.dart';
+import '../../features/revision/repository/revision_repository.dart';
 import '../../features/schedule/bloc/schedule_bloc.dart';
 import '../../features/schedule/repository/schedule_repository.dart';
 import '../../features/study_plan/bloc/study_plan_bloc.dart';
@@ -86,6 +90,35 @@ void setupInjector() {
   );
   getIt.registerFactory<ScheduleBloc>(
     () => ScheduleBloc(getIt<ScheduleRepository>()),
+  );
+
+  getIt.registerLazySingleton<RevisionRepository>(
+    () => RevisionRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  getIt.registerFactory<RevisionBloc>(
+    () => RevisionBloc(getIt<RevisionRepository>()),
+  );
+
+  // GoalsBloc has no dedicated repository — it reads directly from the
+  // repositories above, per Phase 8 (goal progress is computed live).
+  getIt.registerFactory<GoalsBloc>(
+    () => GoalsBloc(
+      getIt<StudyPlanRepository>(),
+      getIt<StudySessionRepository>(),
+      getIt<TopicRepository>(),
+      getIt<RevisionRepository>(),
+    ),
+  );
+
+  // ProgressAnalyticsBloc has no dedicated repository either — same
+  // rationale as GoalsBloc.
+  getIt.registerFactory<ProgressAnalyticsBloc>(
+    () => ProgressAnalyticsBloc(
+      getIt<StudyPlanRepository>(),
+      getIt<SubjectRepository>(),
+      getIt<TopicRepository>(),
+      getIt<StudySessionRepository>(),
+    ),
   );
 
   getIt.registerLazySingleton<GoRouter>(() => buildRouter(getIt<AuthBloc>()));

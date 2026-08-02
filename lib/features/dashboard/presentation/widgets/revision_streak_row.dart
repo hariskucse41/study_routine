@@ -7,8 +7,15 @@ import '../../model/dashboard_summary.dart';
 
 class RevisionStreakRow extends StatelessWidget {
   final DashboardSummary summary;
+  final VoidCallback? onRevisionDueTap;
+  final VoidCallback? onStreakTap;
 
-  const RevisionStreakRow({super.key, required this.summary});
+  const RevisionStreakRow({
+    super.key,
+    required this.summary,
+    this.onRevisionDueTap,
+    this.onStreakTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +28,7 @@ class RevisionStreakRow extends StatelessWidget {
             label: 'Revision Due',
             value: '${summary.dueRevisionsCount}',
             suffix: summary.dueRevisionsCount == 1 ? 'Topic' : 'Topics',
+            onTap: onRevisionDueTap,
           ),
         ),
         const SizedBox(width: AppSpacing.md),
@@ -31,6 +39,7 @@ class RevisionStreakRow extends StatelessWidget {
             label: 'Current Streak',
             value: '${summary.currentStreakDays}',
             suffix: summary.currentStreakDays == 1 ? 'Day' : 'Days',
+            onTap: onStreakTap,
           ),
         ),
       ],
@@ -44,6 +53,7 @@ class _MiniStatCard extends StatelessWidget {
   final String label;
   final String value;
   final String suffix;
+  final VoidCallback? onTap;
 
   const _MiniStatCard({
     required this.icon,
@@ -51,43 +61,48 @@ class _MiniStatCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.suffix,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(value, style: AppTextStyles.heading1),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                suffix,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: iconColor),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(value, style: AppTextStyles.heading1),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  suffix,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          Text(
-            label,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              ],
             ),
-          ),
-        ],
+            Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

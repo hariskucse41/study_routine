@@ -9,8 +9,8 @@ import '../theme/app_colors.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 
 /// Shared behavior for the persistent bottom nav bar, reused by every
-/// top-level tab screen (Home, Subjects, and future Progress/Settings
-/// screens) so "coming soon" tabs and the Logout action stay consistent
+/// top-level tab screen (Home, Subjects, Progress, and a future Settings
+/// screen) so "coming soon" tabs and the Logout action stay consistent
 /// and don't need to be re-implemented per page.
 void handleBottomNavTap(
   BuildContext context,
@@ -28,7 +28,7 @@ void handleBottomNavTap(
     case AppNavTab.add:
       context.push(AppRoutes.addSchedule);
     case AppNavTab.progress:
-      showComingSoon(context);
+      context.go(AppRoutes.progress);
   }
 }
 
@@ -45,6 +45,14 @@ void showMoreMenu(BuildContext context) {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: const Text('Goals & Streaks'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              context.push(AppRoutes.goals);
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
             title: const Text('Settings'),

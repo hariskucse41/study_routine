@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/constants/study_constants.dart';
+import '../../../core/utils/date_utils.dart';
 import '../model/topic_model.dart';
 
 class TopicRepository {
@@ -19,6 +21,16 @@ class TopicRepository {
         .orderBy('order')
         .snapshots()
         .map((s) => s.docs.map(TopicModel.fromFirestore).toList());
+  }
+
+  /// One-shot fetch of every topic across a whole plan (all subjects) —
+  /// single equality filter, no orderBy, so it's covered by Firestore's
+  /// automatic single-field index (no composite index needed). Used by
+  /// Progress Analytics for the overall/per-subject aggregates and Weak
+  /// Topics.
+  Future<List<TopicModel>> fetchTopicsForPlan(String planId) async {
+    final snapshot = await _col.where('planId', isEqualTo: planId).get();
+    return snapshot.docs.map(TopicModel.fromFirestore).toList();
   }
 
   /// Fields are accepted individually (not a pre-built TopicModel) so the
@@ -63,6 +75,12 @@ class TopicRepository {
   /// one atomic batch — the session captures what happened in that sitting
   /// (completionPercentage/confidenceScore/notes), while the topic's own
   /// fields reflect its overall current standing.
+  ///
+  /// Also auto-creates the first revision (revisionNumber: 1, due
+  /// [defaultRevisionIntervalDays] out) in the same batch, but only when
+  /// status is actually transitioning into 'completed' — reading the
+  /// topic's current status first avoids spawning a duplicate revision
+  /// chain if a topic gets marked completed more than once.
   Future<void> updateTopicProgress({
     required String topicId,
     required String sessionId,
@@ -71,9 +89,15 @@ class TopicRepository {
     required double confidenceScore,
     String? notes,
   }) async {
+    final topicRef = _col.doc(topicId);
+    final currentDoc = await topicRef.get();
+    final currentData = currentDoc.data() as Map<String, dynamic>?;
+    final previousStatus = currentData?['status'] as String?;
+    final justCompleted = status == 'completed' && previousStatus != 'completed';
+
     final batch = _firestore.batch();
 
-    batch.update(_col.doc(topicId), {
+    batch.update(topicRef, {
       'progressPercentage': progressPercentage,
       'status': status,
       'confidenceScore': confidenceScore,
@@ -88,6 +112,44 @@ class TopicRepository {
       if (notes != null) 'notes': notes,
     });
 
+    if (justCompleted && currentData != null) {
+      final revisionRef = _firestore.collection('revisions').doc();
+      batch.set(revisionRef, {
+        'userId': _uid,
+        'planId': currentData['planId'],
+        'subjectId': currentData['subjectId'],
+        'topicId': topicId,
+        'revisionNumber': 1,
+        'scheduledDate': Timestamp.fromDate(
+          localMidnight(
+            DateTime.now().add(
+              const Duration(days: defaultRevisionIntervalDays),
+            ),
+          ),
+        ),
+        'status': 'pending',
+        'confidenceScore': 0.0,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
     await batch.commit();
+  }
+
+  /// Count of topics whose completedAt falls within [start, end) — used by
+  /// the Goals checklist's "Topics Completed" item.
+  Future<int> countCompletedInRange({
+    required String planId,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final snapshot = await _col
+        .where('planId', isEqualTo: planId)
+        .where('completedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('completedAt', isLessThan: Timestamp.fromDate(end))
+        .count()
+        .get();
+    return snapshot.count ?? 0;
   }
 }

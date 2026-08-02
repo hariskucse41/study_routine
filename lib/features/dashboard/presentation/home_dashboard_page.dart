@@ -84,7 +84,12 @@ class _HomeDashboardView extends StatelessWidget {
                         onTap: () => context.push(AppRoutes.schedule),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      RevisionStreakRow(summary: summary),
+                      RevisionStreakRow(
+                        summary: summary,
+                        onRevisionDueTap: () =>
+                            context.push(AppRoutes.revisions),
+                        onStreakTap: () => context.push(AppRoutes.goals),
+                      ),
                     ],
                   ),
                 );
