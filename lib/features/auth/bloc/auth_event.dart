@@ -48,3 +48,11 @@ class PasswordResetRequested extends AuthEvent {
 class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }
+
+/// Re-fetches the current user's users/{uid} Firestore doc without
+/// touching AuthStatus. Dispatched after another feature (e.g. StudyPlan)
+/// writes a field on that doc — such as activeStudyPlanId — that the
+/// router's redirect logic depends on.
+class AuthUserRefreshRequested extends AuthEvent {
+  const AuthUserRefreshRequested();
+}

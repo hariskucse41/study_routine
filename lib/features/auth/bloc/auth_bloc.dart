@@ -18,6 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterRequested>(_onRegisterRequested);
     on<PasswordResetRequested>(_onPasswordResetRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<AuthUserRefreshRequested>(_onUserRefreshRequested);
 
     _authSub = _repo.authStateChanges().listen(
       (user) => add(AuthStatusChanged(user)),
@@ -137,6 +138,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     await _repo.signOut();
+  }
+
+  Future<void> _onUserRefreshRequested(
+    AuthUserRefreshRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final firebaseUser = _repo.currentUser;
+    if (firebaseUser == null) return;
+    final profile =
+        await _repo.fetchUserProfile(firebaseUser.uid) ??
+        AppUserModel.fromFirebaseUser(firebaseUser);
+    emit(state.copyWith(user: profile));
   }
 
   String _mapAuthError(FirebaseAuthException e) {

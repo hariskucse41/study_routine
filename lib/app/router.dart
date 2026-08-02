@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/utils/go_router_refresh_stream.dart';
 import '../features/auth/bloc/auth_bloc.dart';
-import '../features/auth/bloc/auth_event.dart';
 import '../features/auth/bloc/auth_state.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
+import '../features/dashboard/presentation/home_dashboard_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/onboarding/presentation/splash_page.dart';
+import '../features/study_plan/presentation/select_study_plan_page.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -20,6 +19,7 @@ class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
+  static const selectPlan = '/select-plan';
   static const home = '/home';
 }
 
@@ -30,15 +30,20 @@ const _authRoutes = {
 };
 
 /// Builds the app's GoRouter, wired to [authBloc] so navigation stays in
-/// sync with the signed-in state: unauthenticated users are forced onto
-/// /login (except while on splash/onboarding), and authenticated users are
-/// bounced off the auth screens straight to /home.
+/// sync with both the signed-in state and whether the user has chosen a
+/// study plan yet:
+///  - unauthenticated users are forced onto /login (except splash/onboarding)
+///  - authenticated users with no activeStudyPlanId are forced onto
+///    /select-plan
+///  - authenticated users with a plan are bounced off auth/select-plan/
+///    splash straight to /home
 GoRouter buildRouter(AuthBloc authBloc) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
-      final status = authBloc.state.status;
+      final authState = authBloc.state;
+      final status = authState.status;
       final location = state.matchedLocation;
 
       if (status == AuthStatus.unknown) {
@@ -56,10 +61,18 @@ GoRouter buildRouter(AuthBloc authBloc) {
       }
 
       // authenticated
-      if (_authRoutes.contains(location) || location == AppRoutes.splash) {
-        return AppRoutes.home;
+      final hasActivePlan = authState.user?.activeStudyPlanId != null;
+      if (!hasActivePlan) {
+        return location == AppRoutes.selectPlan
+            ? null
+            : AppRoutes.selectPlan;
       }
-      return null;
+
+      final shouldLeave =
+          _authRoutes.contains(location) ||
+          location == AppRoutes.splash ||
+          location == AppRoutes.selectPlan;
+      return shouldLeave ? AppRoutes.home : null;
     },
     routes: [
       GoRoute(
@@ -83,35 +96,13 @@ GoRouter buildRouter(AuthBloc authBloc) {
         builder: (context, state) => const ForgotPasswordPage(),
       ),
       GoRoute(
+        path: AppRoutes.selectPlan,
+        builder: (context, state) => const SelectStudyPlanPage(),
+      ),
+      GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const _HomePlaceholderPage(),
+        builder: (context, state) => const HomeDashboardPage(),
       ),
     ],
   );
-}
-
-/// Temporary placeholder for the Home Dashboard, built for real in Phase 2.
-/// Includes a working logout action so the auth flow is testable end-to-end.
-class _HomePlaceholderPage extends StatelessWidget {
-  const _HomePlaceholderPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () =>
-                context.read<AuthBloc>().add(const LogoutRequested()),
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Home Dashboard — coming in Phase 2'),
-      ),
-    );
-  }
 }

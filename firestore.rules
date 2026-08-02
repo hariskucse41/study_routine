@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    // helper: user-owned collections that carry a userId field
+    match /{collection}/{docId} {
+      allow read: if isSignedIn()
+        && collection in ['study_plans','subjects','topics','schedules',
+                           'study_sessions','revisions','test_results','daily_goals']
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn()
+        && collection in ['study_plans','subjects','topics','schedules',
+                           'study_sessions','revisions','test_results','daily_goals']
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && collection in ['study_plans','subjects','topics','schedules',
+                           'study_sessions','revisions','test_results','daily_goals']
+        && resource.data.userId == request.auth.uid
+        // ownership field cannot be changed on update
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if isSignedIn()
+        && collection in ['study_plans','subjects','topics','schedules',
+                           'study_sessions','revisions','test_results','daily_goals']
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    match /notification_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // read-only reference data, writable only from backend/admin (Cloud
+    // Functions using the Admin SDK bypass rules, so no write path needs
+    // to be opened here)
+    match /syllabus_templates/{id} { allow read: if isSignedIn(); allow write: if false; }
+    match /template_subjects/{id} { allow read: if isSignedIn(); allow write: if false; }
+    match /template_topics/{id}   { allow read: if isSignedIn(); allow write: if false; }
+  }
+}
