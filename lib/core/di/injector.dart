@@ -4,11 +4,14 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../notifications/notification_service.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
 import '../../features/auth/repository/auth_repository.dart';
 import '../../features/dashboard/bloc/dashboard_bloc.dart';
 import '../../features/dashboard/repository/dashboard_repository.dart';
 import '../../features/goals/bloc/goals_bloc.dart';
+import '../../features/notification/bloc/notification_bloc.dart';
+import '../../features/notification/repository/notification_repository.dart';
 import '../../features/progress_analytics/bloc/progress_analytics_bloc.dart';
 import '../../features/revision/bloc/revision_bloc.dart';
 import '../../features/revision/repository/revision_repository.dart';
@@ -128,6 +131,26 @@ void setupInjector() {
       getIt<TopicRepository>(),
       getIt<StudySessionRepository>(),
       getIt<TestResultRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<NotificationService>(
+    () => NotificationService(),
+  );
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
+  );
+  // NotificationBloc has no fetch of its own for the feed items — it reads
+  // directly from the repositories above (schedules/revisions/etc.), same
+  // rationale as GoalsBloc/ProgressAnalyticsBloc.
+  getIt.registerFactory<NotificationBloc>(
+    () => NotificationBloc(
+      getIt<NotificationRepository>(),
+      getIt<NotificationService>(),
+      getIt<StudyPlanRepository>(),
+      getIt<ScheduleRepository>(),
+      getIt<RevisionRepository>(),
+      getIt<StudySessionRepository>(),
     ),
   );
 

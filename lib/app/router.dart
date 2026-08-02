@@ -8,6 +8,7 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
 import '../features/dashboard/presentation/home_dashboard_page.dart';
 import '../features/goals/presentation/goals_page.dart';
+import '../features/notification/presentation/notifications_page.dart';
 import '../features/onboarding/presentation/onboarding_page.dart';
 import '../features/onboarding/presentation/splash_page.dart';
 import '../features/progress_analytics/presentation/progress_dashboard_page.dart';
@@ -67,6 +68,8 @@ class AppRoutes {
 
   static const testResults = '/test-results';
   static const addTestResult = '/test-results/add';
+
+  static const notifications = '/notifications';
 }
 
 const _authRoutes = {
@@ -249,6 +252,10 @@ GoRouter buildRouter(AuthBloc authBloc) {
             builder: (context, state) => const AddTestResultPage(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationsPage(),
       ),
     ],
   );

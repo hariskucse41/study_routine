@@ -74,7 +74,8 @@ class _HomeDashboardView extends StatelessWidget {
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
                       GreetingHeader(
-                        onNotificationsTap: () => showComingSoon(context),
+                        onNotificationsTap: () =>
+                            context.push(AppRoutes.notifications),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       ActivePlanCard(plan: summary.plan),
