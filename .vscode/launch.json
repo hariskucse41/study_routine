@@ -2,19 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "study_routine (Chrome)",
+      "name": "📱 Study Routine - Motorola Wireless",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "adb-ZN42286TJ2-iBoLmj._adb-tls-connect._tcp"
+    },
+    {
+      "name": "🌐 Study Routine - Chrome",
       "request": "launch",
       "type": "dart",
       "deviceId": "chrome"
     },
     {
-      "name": "study_routine (Edge)",
-      "request": "launch",
-      "type": "dart",
-      "deviceId": "edge"
-    },
-    {
-      "name": "study_routine (Windows desktop — Firebase won't work)",
+      "name": "🖥️ Study Routine - Windows",
       "request": "launch",
       "type": "dart",
       "deviceId": "windows"

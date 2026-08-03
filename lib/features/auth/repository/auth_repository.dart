@@ -27,17 +27,8 @@ class AuthRepository {
       password: password,
     );
     final uid = credential.user!.uid;
-    await _firestore.collection('users').doc(uid).set({
-      'uid': uid,
-      'name': name,
-      'email': email,
-      'photoUrl': null,
-      'activeStudyPlanId': null,
-      'dailyStudyGoalMinutes': 120,
-      'timezone': 'Asia/Dhaka',
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    final user = AppUserModel(uid: uid, name: name, email: email);
+    await _firestore.collection('users').doc(uid).set(user.toFirestore());
   }
 
   Future<void> sendPasswordResetEmail(String email) {
@@ -50,5 +41,12 @@ class AuthRepository {
     final doc = await _firestore.collection('users').doc(uid).get();
     if (!doc.exists) return null;
     return AppUserModel.fromFirestore(doc);
+  }
+
+  Future<void> updateUserProfile(AppUserModel user) {
+    return _firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(user.toFirestore(), SetOptions(merge: true));
   }
 }

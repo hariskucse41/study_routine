@@ -9,6 +9,10 @@ class AppUserModel {
   final String? activeStudyPlanId;
   final int dailyStudyGoalMinutes;
   final String timezone;
+  final String studyStartTime; // 'HH:mm'
+  final String studyEndTime; // 'HH:mm'
+  final String themeMode; // 'system' | 'light' | 'dark'
+  final String language; // e.g. 'en'
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -20,6 +24,10 @@ class AppUserModel {
     this.activeStudyPlanId,
     this.dailyStudyGoalMinutes = 120,
     this.timezone = 'Asia/Dhaka',
+    this.studyStartTime = '08:00',
+    this.studyEndTime = '22:00',
+    this.themeMode = 'system',
+    this.language = 'en',
     this.createdAt,
     this.updatedAt,
   });
@@ -34,6 +42,10 @@ class AppUserModel {
       activeStudyPlanId: d['activeStudyPlanId'],
       dailyStudyGoalMinutes: d['dailyStudyGoalMinutes'] ?? 120,
       timezone: d['timezone'] ?? 'Asia/Dhaka',
+      studyStartTime: d['studyStartTime'] ?? '08:00',
+      studyEndTime: d['studyEndTime'] ?? '22:00',
+      themeMode: d['themeMode'] ?? 'system',
+      language: d['language'] ?? 'en',
       createdAt: (d['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -59,7 +71,33 @@ class AppUserModel {
     'activeStudyPlanId': activeStudyPlanId,
     'dailyStudyGoalMinutes': dailyStudyGoalMinutes,
     'timezone': timezone,
+    'studyStartTime': studyStartTime,
+    'studyEndTime': studyEndTime,
+    'themeMode': themeMode,
+    'language': language,
     'updatedAt': FieldValue.serverTimestamp(),
     if (createdAt == null) 'createdAt': FieldValue.serverTimestamp(),
   };
+
+  AppUserModel copyWith({
+    int? dailyStudyGoalMinutes,
+    String? studyStartTime,
+    String? studyEndTime,
+    String? themeMode,
+    String? language,
+  }) => AppUserModel(
+    uid: uid,
+    name: name,
+    email: email,
+    photoUrl: photoUrl,
+    activeStudyPlanId: activeStudyPlanId,
+    dailyStudyGoalMinutes: dailyStudyGoalMinutes ?? this.dailyStudyGoalMinutes,
+    timezone: timezone,
+    studyStartTime: studyStartTime ?? this.studyStartTime,
+    studyEndTime: studyEndTime ?? this.studyEndTime,
+    themeMode: themeMode ?? this.themeMode,
+    language: language ?? this.language,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

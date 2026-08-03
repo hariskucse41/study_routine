@@ -4,40 +4,288 @@ service cloud.firestore {
 
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isOwnedByRequester(data) { return data.userId == request.auth.uid; }
+    function ownershipUnchanged() { return request.resource.data.userId == resource.data.userId; }
 
-    // helper: user-owned collections that carry a userId field
-    match /{collection}/{docId} {
-      allow read: if isSignedIn()
-        && collection in ['study_plans','subjects','topics','schedules',
-                           'study_sessions','revisions','test_results','daily_goals']
-        && resource.data.userId == request.auth.uid;
+    // ---- shared field-type helpers ----
+    function isPriority(v) { return v in ['low', 'medium', 'high']; }
+    function isPercentage(v) { return v is number && v >= 0 && v <= 100; }
+    function isNonNegNumber(v) { return v is number && v >= 0; }
+    function isPositiveNumber(v) { return v is number && v > 0; }
+    // Star-rating confidence, 0 (unrated) to 5 — see update_progress_page.dart.
+    function isConfidenceScore(v) { return v is number && v >= 0 && v <= 5; }
+    function isTimeString(v) { return v is string && v.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'); }
+    function isNullableString(v) { return v == null || v is string; }
+    function isNullableTimestamp(v) { return v == null || v is timestamp; }
+    // For fields a model never actually serializes on create (only ever
+    // set later via a raw partial update, if at all) — the key may be
+    // entirely absent from the document.
+    function isOptionalTimestamp(data, key) {
+      return !(key in data) || data[key] == null || data[key] is timestamp;
+    }
 
+    // ==================== study_plans (StudyPlanModel) ====================
+    function isValidStudyPlan(data) {
+      return data.userId is string
+        && data.title is string && data.title.size() > 0
+        && isNullableString(data.examName)
+        && isNullableTimestamp(data.examDate)
+        && data.status in ['active', 'paused', 'completed', 'archived']
+        && isPositiveNumber(data.dailyTargetMinutes)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /study_plans/{planId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
       allow create: if isSignedIn()
-        && collection in ['study_plans','subjects','topics','schedules',
-                           'study_sessions','revisions','test_results','daily_goals']
-        && request.resource.data.userId == request.auth.uid;
-
+        && isOwnedByRequester(request.resource.data)
+        && isValidStudyPlan(request.resource.data);
       allow update: if isSignedIn()
-        && collection in ['study_plans','subjects','topics','schedules',
-                           'study_sessions','revisions','test_results','daily_goals']
-        && resource.data.userId == request.auth.uid
-        // ownership field cannot be changed on update
-        && request.resource.data.userId == resource.data.userId;
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidStudyPlan(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
 
-      allow delete: if isSignedIn()
-        && collection in ['study_plans','subjects','topics','schedules',
-                           'study_sessions','revisions','test_results','daily_goals']
-        && resource.data.userId == request.auth.uid;
+    // ====================== subjects (SubjectModel) ========================
+    function isValidSubject(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.name is string && data.name.size() > 0
+        && isNullableString(data.description)
+        && data.icon is string
+        && data.color is string
+        && isPriority(data.priority)
+        && isNonNegNumber(data.order)
+        && isNonNegNumber(data.estimatedMinutes)
+        && data.isArchived is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidSubject(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidSubject(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // ======================== topics (TopicModel) ==========================
+    function isValidTopic(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.subjectId is string
+        && isNullableString(data.parentTopicId)
+        && data.title is string && data.title.size() > 0
+        && isNullableString(data.description)
+        && isPriority(data.priority)
+        && data.difficulty in ['easy', 'medium', 'hard']
+        && isNonNegNumber(data.estimatedMinutes)
+        && isNonNegNumber(data.actualMinutes)
+        && isPercentage(data.progressPercentage)
+        && data.status in ['notStarted', 'inProgress', 'completed', 'revisionNeeded', 'mastered']
+        && isConfidenceScore(data.confidenceScore)
+        && data.revisionRequired is bool
+        && isNonNegNumber(data.order)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        // toFirestore() never writes this key on create — only a later
+        // raw partial update (updateTopicProgress) sets it, and only when
+        // status transitions to 'completed'.
+        && isOptionalTimestamp(data, 'completedAt');
+    }
+
+    match /topics/{topicId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidTopic(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidTopic(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // ====================== schedules (ScheduleModel) =======================
+    function isValidSchedule(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.subjectId is string
+        && data.topicId is string
+        && data.scheduledDate is timestamp
+        && isTimeString(data.startTime)
+        && isNonNegNumber(data.plannedMinutes)
+        && isPriority(data.priority)
+        && data.status in ['pending', 'inProgress', 'completed', 'partiallyCompleted', 'missed', 'skipped', 'rescheduled']
+        && isPercentage(data.completionPercentage)
+        && data.reminderEnabled is bool
+        && isNonNegNumber(data.reminderMinutesBefore)
+        && isNullableString(data.notes)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        // toFirestore() never writes this key at all currently — the field
+        // exists on the model but nothing sets it yet.
+        && isOptionalTimestamp(data, 'completedAt');
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidSchedule(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidSchedule(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // =================== study_sessions (StudySessionModel) ==================
+    function isValidStudySession(data) {
+      return data.userId is string
+        && data.planId is string
+        && isNullableString(data.scheduleId)
+        && data.subjectId is string
+        && data.topicId is string
+        && data.startedAt is timestamp
+        && isNullableTimestamp(data.endedAt)
+        && isNonNegNumber(data.plannedMinutes)
+        && isNonNegNumber(data.actualMinutes)
+        && isPercentage(data.completionPercentage)
+        && isConfidenceScore(data.confidenceScore)
+        && isNullableString(data.notes)
+        && data.createdAt is timestamp;
+    }
+
+    match /study_sessions/{sessionId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidStudySession(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidStudySession(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // ====================== revisions (RevisionModel) =======================
+    function isValidRevision(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.subjectId is string
+        && data.topicId is string
+        && data.revisionNumber is number && data.revisionNumber >= 1
+        && data.scheduledDate is timestamp
+        && isNullableTimestamp(data.completedDate)
+        && data.status in ['pending', 'completed', 'missed', 'rescheduled']
+        && isConfidenceScore(data.confidenceScore)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /revisions/{revisionId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidRevision(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidRevision(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // ==================== test_results (TestResultModel) ====================
+    function isValidTestResult(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.subjectId is string
+        && isNullableString(data.topicId)
+        && data.title is string && data.title.size() > 0
+        && isNonNegNumber(data.totalQuestions)
+        && isNonNegNumber(data.correctAnswers)
+        && isNonNegNumber(data.wrongAnswers)
+        && isNonNegNumber(data.skippedAnswers)
+        && isPercentage(data.scorePercentage)
+        && isNonNegNumber(data.durationMinutes)
+        && data.testDate is timestamp
+        && isNullableString(data.notes)
+        && data.createdAt is timestamp;
+    }
+
+    match /test_results/{testResultId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn()
+        && isOwnedByRequester(request.resource.data)
+        && isValidTestResult(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged()
+        && isValidTestResult(request.resource.data);
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // daily_goals: no model or writer exists in the app yet — the Goals
+    // screen computes everything live client-side (see GoalsSummary)
+    // rather than syncing a snapshot doc. Kept as an ownership-only
+    // placeholder for that future collection; no field schema to
+    // validate until something actually defines one.
+    match /daily_goals/{docId} {
+      allow read: if isSignedIn() && isOwnedByRequester(resource.data);
+      allow create: if isSignedIn() && isOwnedByRequester(request.resource.data);
+      allow update: if isSignedIn()
+        && isOwnedByRequester(resource.data) && ownershipUnchanged();
+      allow delete: if isSignedIn() && isOwnedByRequester(resource.data);
+    }
+
+    // ========================= users (AppUserModel) =========================
+    function isValidUser(data) {
+      return data.uid is string
+        && data.name is string
+        && data.email is string
+        && isNullableString(data.photoUrl)
+        && isNullableString(data.activeStudyPlanId)
+        && isPositiveNumber(data.dailyStudyGoalMinutes)
+        && data.timezone is string
+        && isTimeString(data.studyStartTime)
+        && isTimeString(data.studyEndTime)
+        && data.themeMode in ['system', 'light', 'dark']
+        && data.language is string
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && isValidUser(request.resource.data);
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && isValidUser(request.resource.data);
       allow delete: if false;
     }
 
+    // ============ notification_preferences (NotificationPreferencesModel) ============
+    function isValidNotificationPreferences(data) {
+      return data.userId is string
+        && data.studyReminderEnabled is bool
+        && data.revisionReminderEnabled is bool
+        && data.dailyPlanReminderEnabled is bool
+        && data.goalReminderEnabled is bool
+        && isTimeString(data.morningReminderTime)
+        && isTimeString(data.eveningReminderTime)
+        && data.pushEnabled is bool
+        && isPositiveNumber(data.breakReminderMinutes)
+        && data.updatedAt is timestamp;
+    }
+
     match /notification_preferences/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && request.resource.data.userId == userId
+        && isValidNotificationPreferences(request.resource.data);
     }
 
     // read-only reference data, writable only from backend/admin (Cloud

@@ -17,8 +17,11 @@ import '../../features/revision/bloc/revision_bloc.dart';
 import '../../features/revision/repository/revision_repository.dart';
 import '../../features/schedule/bloc/schedule_bloc.dart';
 import '../../features/schedule/repository/schedule_repository.dart';
+import '../../features/search/bloc/search_bloc.dart';
+import '../../features/settings/bloc/settings_bloc.dart';
 import '../../features/study_plan/bloc/study_plan_bloc.dart';
 import '../../features/study_plan/repository/study_plan_repository.dart';
+import '../../features/study_plan/repository/syllabus_template_repository.dart';
 import '../../features/study_session/bloc/study_session_bloc.dart';
 import '../../features/study_session/repository/study_session_repository.dart';
 import '../../features/subject/bloc/subject_bloc.dart';
@@ -48,8 +51,17 @@ void setupInjector() {
   getIt.registerLazySingleton<StudyPlanRepository>(
     () => StudyPlanRepository(getIt<FirebaseFirestore>(), getIt<FirebaseAuth>()),
   );
+  getIt.registerLazySingleton<SyllabusTemplateRepository>(
+    () => SyllabusTemplateRepository(
+      getIt<FirebaseFirestore>(),
+      getIt<FirebaseAuth>(),
+    ),
+  );
   getIt.registerFactory<StudyPlanBloc>(
-    () => StudyPlanBloc(getIt<StudyPlanRepository>()),
+    () => StudyPlanBloc(
+      getIt<StudyPlanRepository>(),
+      getIt<SyllabusTemplateRepository>(),
+    ),
   );
 
   getIt.registerLazySingleton<StudySessionRepository>(
@@ -152,6 +164,24 @@ void setupInjector() {
       getIt<RevisionRepository>(),
       getIt<StudySessionRepository>(),
     ),
+  );
+
+  // SearchBloc has no dedicated repository — it reads directly from the
+  // Topic/Schedule/Subject repositories above (one-shot fetches, no new
+  // Firestore query methods), same rationale as GoalsBloc.
+  getIt.registerFactory<SearchBloc>(
+    () => SearchBloc(
+      getIt<TopicRepository>(),
+      getIt<ScheduleRepository>(),
+      getIt<SubjectRepository>(),
+    ),
+  );
+
+  // SettingsBloc has no dedicated repository either — it writes through
+  // AuthRepository (users/{uid}) and NotificationRepository
+  // (notification_preferences/{uid}).
+  getIt.registerFactory<SettingsBloc>(
+    () => SettingsBloc(getIt<AuthRepository>(), getIt<NotificationRepository>()),
   );
 
   getIt.registerLazySingleton<GoRouter>(() => buildRouter(getIt<AuthBloc>()));

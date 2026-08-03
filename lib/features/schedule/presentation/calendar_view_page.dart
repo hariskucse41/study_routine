@@ -10,11 +10,13 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/error_state_widget.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
+import '../model/schedule_model.dart';
 import 'widgets/schedule_tile.dart';
 
 class CalendarViewPage extends StatelessWidget {
@@ -81,7 +83,15 @@ class _CalendarViewState extends State<_CalendarView> {
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Calendar')),
       body: SafeArea(
-        child: BlocBuilder<ScheduleBloc, ScheduleState>(
+        child: BlocConsumer<ScheduleBloc, ScheduleState>(
+          listenWhen: (previous, current) =>
+              previous.errorMessage != current.errorMessage &&
+              current.errorMessage != null,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage!)),
+            );
+          },
           builder: (context, state) {
             final scheduledDays = state.schedules
                 .map((s) => localMidnight(s.scheduledDate))
@@ -128,42 +138,7 @@ class _CalendarViewState extends State<_CalendarView> {
                         setState(() => _selectedDate = day),
                   ),
                 const Divider(height: AppSpacing.xl),
-                Expanded(
-                  child: agenda.isEmpty
-                      ? EmptyStateWidget(
-                          message:
-                              'Nothing scheduled for ${formatFriendlyDate(_selectedDate)}',
-                          icon: Icons.event_available_outlined,
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                          ),
-                          itemCount: agenda.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSpacing.md),
-                          itemBuilder: (context, index) {
-                            final schedule = agenda[index];
-                            final subjectName =
-                                state.subjectNames[schedule.subjectId] ?? '';
-                            final topicName =
-                                state.topicNames[schedule.topicId] ?? '';
-                            return ScheduleTile(
-                              schedule: schedule,
-                              subjectName: subjectName,
-                              topicName: topicName,
-                              onTap: () => context.push(
-                                AppRoutes.session,
-                                extra: sessionArgsForSchedule(
-                                  schedule,
-                                  subjectName,
-                                  topicName,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
+                Expanded(child: _buildAgenda(context, state, agenda)),
               ],
             );
           },
@@ -174,6 +149,50 @@ class _CalendarViewState extends State<_CalendarView> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Widget _buildAgenda(
+    BuildContext context,
+    ScheduleState state,
+    List<ScheduleModel> agenda,
+  ) {
+    switch (state.status) {
+      case ScheduleListStatus.initial:
+      case ScheduleListStatus.loading:
+        return const LoadingIndicator();
+      case ScheduleListStatus.error:
+        return ErrorStateWidget(
+          message: state.errorMessage ?? 'Something went wrong',
+        );
+      case ScheduleListStatus.empty:
+      case ScheduleListStatus.success:
+        if (agenda.isEmpty) {
+          return EmptyStateWidget(
+            message:
+                'Nothing scheduled for ${formatFriendlyDate(_selectedDate)}',
+            icon: Icons.event_available_outlined,
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          itemCount: agenda.length,
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+          itemBuilder: (context, index) {
+            final schedule = agenda[index];
+            final subjectName = state.subjectNames[schedule.subjectId] ?? '';
+            final topicName = state.topicNames[schedule.topicId] ?? '';
+            return ScheduleTile(
+              schedule: schedule,
+              subjectName: subjectName,
+              topicName: topicName,
+              onTap: () => context.push(
+                AppRoutes.session,
+                extra: sessionArgsForSchedule(schedule, subjectName, topicName),
+              ),
+            );
+          },
+        );
+    }
   }
 }
 

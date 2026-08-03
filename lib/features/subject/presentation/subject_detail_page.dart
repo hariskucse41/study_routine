@@ -116,11 +116,30 @@ class _SubjectDetailView extends StatelessWidget {
                 }
                 return BlocBuilder<TopicBloc, TopicState>(
                   builder: (context, topicState) {
-                    return _SubjectDetailContent(
-                      subject: subject,
-                      topics: topicState.topics,
-                      onArchive: () => _confirmArchive(context, subject),
-                    );
+                    switch (topicState.status) {
+                      case TopicListStatus.initial:
+                      case TopicListStatus.loading:
+                        return Scaffold(
+                          appBar: AppBar(title: Text(subject.name)),
+                          body: const LoadingIndicator(),
+                        );
+                      case TopicListStatus.error:
+                        return Scaffold(
+                          appBar: AppBar(title: Text(subject.name)),
+                          body: ErrorStateWidget(
+                            message:
+                                topicState.errorMessage ??
+                                'Something went wrong',
+                          ),
+                        );
+                      case TopicListStatus.empty:
+                      case TopicListStatus.success:
+                        return _SubjectDetailContent(
+                          subject: subject,
+                          topics: topicState.topics,
+                          onArchive: () => _confirmArchive(context, subject),
+                        );
+                    }
                   },
                 );
             }

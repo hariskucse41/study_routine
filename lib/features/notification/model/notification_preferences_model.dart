@@ -9,6 +9,7 @@ class NotificationPreferencesModel {
   final String morningReminderTime; // 'HH:mm'
   final String eveningReminderTime; // 'HH:mm'
   final bool pushEnabled;
+  final int breakReminderMinutes; // interval between break reminders
   final DateTime? updatedAt;
 
   const NotificationPreferencesModel({
@@ -20,6 +21,7 @@ class NotificationPreferencesModel {
     this.morningReminderTime = '08:00',
     this.eveningReminderTime = '20:00',
     this.pushEnabled = true,
+    this.breakReminderMinutes = 60,
     this.updatedAt,
   });
 
@@ -37,6 +39,7 @@ class NotificationPreferencesModel {
       morningReminderTime: d['morningReminderTime'] ?? '08:00',
       eveningReminderTime: d['eveningReminderTime'] ?? '20:00',
       pushEnabled: d['pushEnabled'] ?? true,
+      breakReminderMinutes: d['breakReminderMinutes'] ?? 60,
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -50,6 +53,22 @@ class NotificationPreferencesModel {
     'morningReminderTime': morningReminderTime,
     'eveningReminderTime': eveningReminderTime,
     'pushEnabled': pushEnabled,
+    'breakReminderMinutes': breakReminderMinutes,
     'updatedAt': FieldValue.serverTimestamp(),
   };
+
+  NotificationPreferencesModel copyWith({int? breakReminderMinutes}) =>
+      NotificationPreferencesModel(
+        userId: userId,
+        studyReminderEnabled: studyReminderEnabled,
+        revisionReminderEnabled: revisionReminderEnabled,
+        dailyPlanReminderEnabled: dailyPlanReminderEnabled,
+        goalReminderEnabled: goalReminderEnabled,
+        morningReminderTime: morningReminderTime,
+        eveningReminderTime: eveningReminderTime,
+        pushEnabled: pushEnabled,
+        breakReminderMinutes:
+            breakReminderMinutes ?? this.breakReminderMinutes,
+        updatedAt: updatedAt,
+      );
 }

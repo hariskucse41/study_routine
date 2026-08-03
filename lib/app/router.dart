@@ -20,6 +20,9 @@ import '../features/revision/presentation/revision_list_page.dart';
 import '../features/schedule/presentation/add_schedule_page.dart';
 import '../features/schedule/presentation/calendar_view_page.dart';
 import '../features/schedule/presentation/todays_routine_page.dart';
+import '../features/search/presentation/search_filter_page.dart';
+import '../features/settings/presentation/profile_settings_page.dart';
+import '../features/settings/presentation/study_settings_page.dart';
 import '../features/study_plan/presentation/select_study_plan_page.dart';
 import '../features/study_session/presentation/session_complete_page.dart';
 import '../features/study_session/presentation/session_start_args.dart';
@@ -70,6 +73,11 @@ class AppRoutes {
   static const addTestResult = '/test-results/add';
 
   static const notifications = '/notifications';
+
+  static const search = '/search';
+
+  static const profileSettings = '/settings';
+  static const studySettings = '/settings/study';
 }
 
 const _authRoutes = {
@@ -256,6 +264,20 @@ GoRouter buildRouter(AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.search,
+        builder: (context, state) => const SearchFilterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.profileSettings,
+        builder: (context, state) => const ProfileSettingsPage(),
+        routes: [
+          GoRoute(
+            path: 'study',
+            builder: (context, state) => const StudySettingsPage(),
+          ),
+        ],
       ),
     ],
   );

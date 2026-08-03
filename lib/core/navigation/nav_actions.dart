@@ -62,11 +62,19 @@ void showMoreMenu(BuildContext context) {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.search),
+            title: const Text('Search'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              context.push(AppRoutes.search);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.settings_outlined),
             title: const Text('Settings'),
             onTap: () {
               Navigator.of(sheetContext).pop();
-              showComingSoon(context);
+              context.push(AppRoutes.profileSettings);
             },
           ),
           ListTile(

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/error_state_widget.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../bloc/revision_bloc.dart';
@@ -84,6 +85,11 @@ class _RevisionDetailView extends StatelessWidget {
             if (state.status == RevisionListStatus.loading ||
                 state.status == RevisionListStatus.initial) {
               return const LoadingIndicator();
+            }
+            if (state.status == RevisionListStatus.error) {
+              return ErrorStateWidget(
+                message: state.errorMessage ?? 'Something went wrong',
+              );
             }
 
             final revisions = [...state.revisions]

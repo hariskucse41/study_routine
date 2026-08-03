@@ -106,6 +106,7 @@ class _SelectStudyPlanViewState extends State<_SelectStudyPlanView> {
         title: option.title,
         examName: option.examName,
         dailyTargetMinutes: option.dailyTargetMinutes,
+        templateName: option.title,
       ),
     );
   }
